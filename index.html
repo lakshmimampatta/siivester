@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siivster - Simple Cleaning Routine MVP</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+        }
+        /* Hide scrollbars for clean mobile app feel */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="h-full flex items-center justify-center p-0 sm:p-4">
+
+    <div class="w-full sm:max-w-md h-full sm:h-[844px] bg-white sm:rounded-[40px] shadow-2xl flex flex-col overflow-hidden relative border border-gray-100">
+
+        <!-- Top Status Bar / Header Branding -->
+        <header class="bg-emerald-600 text-white px-6 py-4 flex items-center justify-between shrink-0 shadow-sm">
+            <div class="flex items-center space-x-2">
+                <div class="bg-white/20 p-2 rounded-xl">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path>
+                    </svg>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight">Siivster</h1>
+            </div>
+            <div id="nav-indicator" class="text-xs bg-emerald-700 px-3 py-1 rounded-full font-medium tracking-wide">
+                Home / Welcome
+            </div>
+        </header>
+
+        <!-- Main Dynamic Screen Content Area -->
+        <main id="app-container" class="flex-1 overflow-y-auto no-scrollbar relative bg-gray-50 flex flex-col">
+            <!-- Content will be injected dynamically via JavaScript -->
+        </main>
+
+        <!-- Bottom Navigation Bar matching the exact requested workflow sequence -->
+        <nav class="bg-white border-t border-gray-200 px-2 py-3 shrink-0 flex justify-around items-center text-gray-500">
+            <button onclick="goToScreen('home')" id="nav-home" class="flex flex-col items-center space-y-1 text-emerald-600 transition-colors">
+                <span class="text-[10px] font-bold">1. Home</span>
+            </button>
+            <button onclick="goToScreen('spaces')" id="nav-spaces" class="flex flex-col items-center space-y-1 hover:text-emerald-600 transition-colors">
+                <span class="text-[10px] font-bold">2. Space</span>
+            </button>
+            <button onclick="goToScreen('routine')" id="nav-routine" class="flex flex-col items-center space-y-1 hover:text-emerald-600 transition-colors">
+                <span class="text-[10px] font-bold">3. Routine</span>
+            </button>
+            <button onclick="goToScreen('feedback')" id="nav-feedback" class="flex flex-col items-center space-y-1 hover:text-emerald-600 transition-colors">
+                <span class="text-[10px] font-bold">4. Feedback</span>
+            </button>
+            <button onclick="goToScreen('progression')" id="nav-progression" class="flex flex-col items-center space-y-1 hover:text-emerald-600 transition-colors">
+                <span class="text-[10px] font-bold">5. Progress</span>
+            </button>
+            <button onclick="goToScreen('tips')" id="nav-tips" class="flex flex-col items-center space-y-1 hover:text-emerald-600 transition-colors">
+                <span class="text-[10px] font-bold">6. Tips</span>
+            </button>
+        </nav>
+
+    </div>
+
+    <script>
+        const state = {
+            currentScreen: 'home', // home, spaces, routine, feedback, progression, tips
+            selectedSpace: 'kitchen',
+            routineProgress: { k1: false, k2: false, k3: false, k4: false },
+            spacesList: [
+                { id: 'kitchen', name: 'Kitchen', icon: '🍳', subtitle: 'Counters, sink, appliances & floor' },
+                { id: 'bathroom', name: 'Bathroom', icon: '🚿', subtitle: 'Shower, toilet, mirror & tiles' }
+            ],
+            routinesData: {
+                kitchen: [
+                    { id: 'k1', task: 'Clear countertops & put away stray items', time: '3 min', product: 'Microfiber cloth' },
+                    { id: 'k2', task: 'Wipe down surfaces with all-purpose cleaner', time: '5 min', product: 'All-purpose surface spray' },
+                    { id: 'k3', task: 'Scrub sink and faucet until shining', time: '3 min', product: 'Baking soda & sponge' },
+                    { id: 'k4', task: 'Quick sweep and spot mop floor', time: '4 min', product: 'Broom & floor cleaner' }
+                ],
+                bathroom: [
+                    { id: 'b1', task: 'Apply cleaner to toilet bowl and let sit', time: '1 min', product: 'Toilet cleaner & brush' },
+                    { id: 'b2', task: 'Wipe mirror and glass surfaces', time: '2 min', product: 'Glass cleaner' }
+                ]
+            }
+        };
+
+        // Navigation Controller
+        function goToScreen(screenName, spaceId = null) {
+            if (spaceId) {
+                state.selectedSpace = spaceId;
+                state.routineProgress = {};
+                const tasks = state.routinesData[spaceId] || [];
+                tasks.forEach(t => state.routineProgress[t.id] = false);
+            }
+            state.currentScreen = screenName;
+            render();
+        }
+
+        function toggleTask(taskId) {
+            state.routineProgress[taskId] = !state.routineProgress[taskId];
+            render();
+        }
+
+        // Main Render Function
+        function render() {
+            const container = document.getElementById('app-container');
+            updateNavIndicators();
+
+            switch (state.currentScreen) {
+                case 'home':
+                    container.innerHTML = renderHomeScreen();
+                    break;
+                case 'spaces':
+                    container.innerHTML = renderSpacesScreen();
+                    break;
+                case 'routine':
+                    container.innerHTML = renderRoutineScreen();
+                    break;
+                case 'feedback':
+                    container.innerHTML = renderFeedbackScreen();
+                    break;
+                case 'progression':
+                    container.innerHTML = renderProgressionScreen();
+                    break;
+                case 'tips':
+                    container.innerHTML = renderTipsScreen();
+                    break;
+                default:
+                    container.innerHTML = renderHomeScreen();
+            }
+        }
+
+        // Update Bottom Nav active highlights
+        function updateNavIndicators() {
+            const navs = ['home', 'spaces', 'routine', 'feedback', 'progression', 'tips'];
+            navs.forEach(n => {
+                const el = document.getElementById(`nav-${n}`);
+                if (el) {
+                    if (state.currentScreen === n) {
+                        el.className = 'flex flex-col items-center space-y-1 text-emerald-600 transition-colors font-bold';
+                    } else {
+                        el.className = 'flex flex-col items-center space-y-1 text-gray-400 hover:text-emerald-600 transition-colors';
+                    }
+                }
+            });
+
+            const headerIndicator = document.getElementById('nav-indicator');
+            const titles = {
+                home: 'Home / Welcome Screen',
+                spaces: 'Choose Space Screen',
+                routine: 'Cleaning Routine Screen',
+                feedback: 'Completion Feedback Screen',
+                progression: 'Progression Screen',
+                tips: 'Cleaning Tips Screen'
+            };
+            if (headerIndicator) {
+                headerIndicator.innerText = titles[state.currentScreen] || 'Siivster';
+            }
+        }
+
+        function renderHomeScreen() {
+            return `
+                <div class="flex-1 flex flex-col justify-between p-6 text-center">
+                    <div class="pt-6">
+                        <div class="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner text-2xl font-bold">🏠</div>
+                        <h2 class="text-2xl font-bold text-gray-800 mb-2">Home Screen / Welcome Screen</h2>
+                        <p class="text-sm text-gray-500 max-w-xs mx-auto">
+                            Welcome to Siivster. Help people who are responsible for keeping a space clean build a simple and efficient cleaning routine.
+                        </p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-2xl border border-gray-200 text-left my-4">
+                        <span class="text-xs font-semibold text-emerald-700 uppercase tracking-wider block mb-1">Target Users</span>
+                        <p class="text-xs text-gray-600">People responsible for cleaning a space and want to be more efficient with their time, doing the right things, at the right time, with the right products.</p>
+                    </div>
+
+                    <div class="pb-4">
+                        <button onclick="goToScreen('spaces')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 rounded-2xl shadow-lg transition-all flex items-center justify-center space-x-2">
+                            <span>Next: Choose Space Screen</span>
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderSpacesScreen() {
+            let spacesHtml = state.spacesList.map(space => `
+                <div onclick="goToScreen('routine', '${space.id}')" class="bg-white p-4 rounded-2xl border border-gray-200 hover:border-emerald-500 shadow-sm cursor-pointer flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-emerald-50 text-2xl rounded-xl flex items-center justify-center shrink-0">
+                        ${space.icon}
+                    </div>
+                    <div class="flex-1">
+                        <h3 class="text-base font-semibold text-gray-800">${space.name}</h3>
+                        <p class="text-xs text-gray-500 mt-0.5">${space.subtitle}</p>
+                    </div>
+                    <div class="text-emerald-600 font-bold">Select →</div>
+                </div>
+            `).join('');
+
+            return `
+                <div class="flex-1 p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="mb-4">
+                            <h2 class="text-xl font-bold text-gray-800">Choose Space Screen</h2>
+                            <p class="text-xs text-gray-500">Select a space to begin your efficient routine workflow.</p>
+                        </div>
+                        <div class="space-y-3">
+                            ${spacesHtml}
+                        </div>
+                    </div>
+                    <div class="pt-4 flex space-x-2">
+                        <button onclick="goToScreen('home')" class="w-1/2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 rounded-xl">← Back</button>
+                        <button onclick="goToScreen('routine')" class="w-1/2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 rounded-xl">Next: Routine →</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderRoutineScreen() {
+            const space = state.spacesList.find(s => s.id === state.selectedSpace) || state.spacesList[0];
+            const tasks = state.routinesData[state.selectedSpace] || state.routinesData.kitchen;
+
+            let tasksHtml = tasks.map(task => {
+                const isChecked = !!state.routineProgress[task.id];
+                return `
+                    <div onclick="toggleTask('${task.id}')" class="bg-white p-3 rounded-xl border ${isChecked ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-200'} cursor-pointer flex items-start space-x-3">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''} class="mt-1 w-4 h-4 text-emerald-600 rounded">
+                        <div class="flex-1">
+                            <h4 class="text-xs font-semibold ${isChecked ? 'line-through text-gray-400' : 'text-gray-800'}">${task.task}</h4>
+                            <span class="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded mr-1">⏱️ ${task.time}</span>
+                            <span class="text-[10px] text-blue-700 bg-blue-50 px-2 py-0.5 rounded">🧴 ${task.product}</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="flex-1 p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="mb-3">
+                            <h2 class="text-xl font-bold text-gray-800">Cleaning Routine Screen</h2>
+                            <p class="text-xs text-gray-500">Doing the right things, at the right time, with the right products for (${space.name}).</p>
+                        </div>
+                        <div class="space-y-2 mb-4">
+                            ${tasksHtml}
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        <button onclick="goToScreen('feedback')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 rounded-2xl shadow-lg">
+                            Finish Routine → Completion Feedback
+                        </button>
+                        <button onclick="goToScreen('spaces')" class="w-full bg-gray-100 text-gray-600 font-semibold py-2.5 rounded-xl text-xs">← Back to Choose Space</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFeedbackScreen() {
+            return `
+                <div class="flex-1 p-6 flex flex-col justify-between text-center">
+                    <div class="pt-8">
+                        <div class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">🎉</div>
+                        <h2 class="text-xl font-bold text-gray-800 mb-2">Completion Feedback Screen</h2>
+                        <p class="text-sm text-gray-500 max-w-xs mx-auto mb-6">
+                            Routine successfully completed! You saved time and executed the routine efficiently.
+                        </p>
+                    </div>
+                    <div class="space-y-2 pb-4">
+                        <button onclick="goToScreen('progression')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 rounded-2xl shadow-lg">
+                            Next: Progression Screen →
+                        </button>
+                        <button onclick="goToScreen('routine')" class="w-full bg-gray-100 text-gray-600 font-semibold py-2.5 rounded-xl text-xs">← Back to Routine</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderProgressionScreen() {
+            return `
+                <div class="flex-1 p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="mb-4">
+                            <h2 class="text-xl font-bold text-gray-800">Progression Screen</h2>
+                            <p class="text-xs text-gray-500">Track your cleaning consistency and time-efficiency streaks.</p>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 mb-4">
+                            <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center">
+                                <span class="text-2xl font-bold text-emerald-600">4</span>
+                                <h4 class="text-xs font-semibold text-gray-600 mt-1">Day Streak</h4>
+                            </div>
+                            <div class="bg-white p-4 rounded-2xl border border-gray-200 text-center">
+                                <span class="text-2xl font-bold text-blue-600">12</span>
+                                <h4 class="text-xs font-semibold text-gray-600 mt-1">Routines Done</h4>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2 pb-4">
+                        <button onclick="goToScreen('tips')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 rounded-2xl shadow-lg">
+                            Next: Cleaning Tips Screen →
+                        </button>
+                        <button onclick="goToScreen('feedback')" class="w-full bg-gray-100 text-gray-600 font-semibold py-2.5 rounded-xl text-xs">← Back to Feedback</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderTipsScreen() {
+            return `
+                <div class="flex-1 p-6 flex flex-col justify-between">
+                    <div>
+                        <div class="mb-4">
+                            <h2 class="text-xl font-bold text-gray-800">Cleaning Tips Screen</h2>
+                            <p class="text-xs text-gray-500">Expert advice for doing tasks efficiently with the right products.</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-2xl border border-gray-200 space-y-3">
+                            <div>
+                                <h4 class="text-xs font-bold text-gray-800">💡 Top-to-Bottom Rule</h4>
+                                <p class="text-[11px] text-gray-500">Always clean shelves before floors so falling dust is handled.</p>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-bold text-gray-800">⏱️ Let Products Sit</h4>
+                                <p class="text-[11px] text-gray-500">Allow surface sprays 2 minutes to break down grime before wiping.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2 pb-4">
+                        <button onclick="goToScreen('home')" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3.5 rounded-2xl shadow-lg">
+                            Restart Workflow (Home Screen) ⟳
+                        </button>
+                        <button onclick="goToScreen('progression')" class="w-full bg-gray-100 text-gray-600 font-semibold py-2.5 rounded-xl text-xs">← Back to Progression</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Initial load
+        window.onload = function() {
+            render();
+        };
+    </script>
+</body>
+</html>
